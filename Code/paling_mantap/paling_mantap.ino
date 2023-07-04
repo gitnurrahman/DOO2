@@ -10,8 +10,8 @@ const int relayPin = 4;
 unsigned char pinFlowsensor = 2;
 
 AccelStepper stepper(1, stepPin, dirPin);
-int step_valve;
-int step_valve1;
+int step_valve = 0;
+int step_valve1 = 0;
 const int numReadings = 5;
 int readings[numReadings];
 int index = 0;
@@ -36,10 +36,10 @@ double liter;
 double dt;
 double integral, error_sebelumnya, output_PID = 0;
 double last_time = 0;
-double setPoint ;
-double Kp ;
-double Ki ;
-double Kd ;
+double setPoint = 0;
+double Kp = 0;
+double Ki = 0;
+double Kd = 0;
 unsigned long Millis_sebelumnya = 0;
 double errorSum1 = 0.00;
 double lastError1 = 0.00;
@@ -151,26 +151,25 @@ void loop()
     if (command == '1')
     { //ON
       digitalWrite(relayPin, LOW);
+      Serial.print("on");
     }
     else if (command == '0')
     { //OFF
       digitalWrite(relayPin, HIGH);
       tangki = 0;
     }
-    else if (command == '4')
-    { //OFF
-      tangki = 3;
-    }
-  }
-
-  if (Serial1.available() > 0)
-  {
-    char command = Serial1.read();
     if (command == '2') {
       tangki = 1;
+      Serial.print("Tangki 1");
     }
     else if (command == '3') {
       tangki = 2;
+      Serial.print("Tangki 2");
+    }
+    else if (command == '4')
+    { //OFF
+      tangki = 3;
+      Serial.print("Manual");
     }
   }
 
@@ -178,6 +177,7 @@ void loop()
   { input = Serial2.readStringUntil('\n');
     // Memanggil fungsi pemisahan nilai
     splitValues(input);
+    Serial.print(input);
     Serial.print(Kp);
     Serial.print(Ki);
     Serial.print(Kd);
@@ -195,10 +195,10 @@ void loop()
     else {
       step_valve = step_valve;
     }
-
     stepper.moveTo(step_valve);   //PID gerakkan vlave
     stepper.runToPosition();
   }
+
   else if (tangki == 2) {
     computePID(setPoint, tinggi2, errorSum2, lastError2, outputPID2);
     float c = outputPID1;         //output PID yg berupa flow ke besar step valve
@@ -210,10 +210,10 @@ void loop()
     else {
       step_valve = step_valve;
     }
-
     stepper.moveTo(step_valve);   //PID gerakkan vlave
     stepper.runToPosition();
   }
+
   else if (tangki == 3) {
     stepper.moveTo(step_valve1);          //Menutup vlave
     stepper.runToPosition();
@@ -223,6 +223,7 @@ void loop()
     stepper.runToPosition();
   }
 }
+
 void splitValues(String input) {
   // Mencari indeks pemisah untuk setiap nilai
   int separatorIndex1 = input.indexOf(separator);
