@@ -11,7 +11,7 @@ unsigned char pinFlowsensor = 2;
 
 AccelStepper stepper(1, stepPin, dirPin);
 int step_valve = 0;
-int step_valve1 = 0;
+double mvalve ;
 const int numReadings = 5;
 int readings[numReadings];
 int index = 0;
@@ -36,10 +36,10 @@ double liter;
 double dt;
 double integral, error_sebelumnya, output_PID = 0;
 double last_time = 0;
-double setPoint = 0;
-double Kp = 0;
-double Ki = 0;
-double Kd = 0;
+double setPoint;
+double Kp ;
+double Ki ;
+double Kd ;
 unsigned long Millis_sebelumnya = 0;
 double errorSum1 = 0.00;
 double lastError1 = 0.00;
@@ -49,7 +49,6 @@ double lastError2 = 0.00;
 double outputPID2 = 0.00;        //output PID tank 1
 int tangki = 0;
 String input;
-String separator = ",";
 void cacahPulsa()
 {
   pulsa_sensor++;
@@ -59,7 +58,6 @@ void cacahPulsa()
 void setup()
 {
   Serial.begin(9600);
-  Serial1.begin(9600);
   Serial2.begin(9600);
   Serial3.begin(9600);
 
@@ -88,7 +86,6 @@ void setup()
   stepper.setMaxSpeed(1000);
   stepper.setAcceleration(500);
   step_valve = 0;
-  step_valve1 = 0;
 }
 
 void loop()
@@ -141,7 +138,7 @@ void loop()
   }
 
   //  SEND SENSOR DATA
-  String Data = String(tinggi1) + "," + String (tinggi2) + "," + String(literPermenit) + ","  + String(step_valve);
+  String Data = String(tinggi1) + "," + String (tinggi2) + "," + String(literPermenit) + ","  + String(mvalve);
   Serial2.println(Data);
   delay(100);
   // ON OFF Pump
@@ -177,12 +174,11 @@ void loop()
   { input = Serial2.readStringUntil('\n');
     // Memanggil fungsi pemisahan nilai
     splitValues(input);
-    Serial.print(input);
-    Serial.print(Kp);
-    Serial.print(Ki);
-    Serial.print(Kd);
-    Serial.print(setPoint);
-    Serial.print(step_valve1);
+    Serial.println(Kp);
+    Serial.println(Ki);
+    Serial.println(Kd);
+    Serial.println(setPoint);
+    Serial.println(mvalve);
   }
   if (tangki == 1) {
     computePID(setPoint, tinggi1, errorSum1, lastError1, outputPID1);
@@ -201,7 +197,7 @@ void loop()
 
   else if (tangki == 2) {
     computePID(setPoint, tinggi2, errorSum2, lastError2, outputPID2);
-    float c = outputPID1;         //output PID yg berupa flow ke besar step valve
+    float c = outputPID2;         //output PID yg berupa flow ke besar step valve
     float d = (-70) * c + 5400;
     step_valve = d;
     if (step_valve > 5300) {
@@ -215,7 +211,7 @@ void loop()
   }
 
   else if (tangki == 3) {
-    stepper.moveTo(step_valve1);          //Menutup vlave
+    stepper.moveTo(mvalve);          //Menutup vlave
     stepper.runToPosition();
   }
   else if (tangki == 0) {
@@ -225,25 +221,22 @@ void loop()
 }
 
 void splitValues(String input) {
-  // Mencari indeks pemisah untuk setiap nilai
-  int separatorIndex1 = input.indexOf(separator);
-  int separatorIndex2 = input.indexOf(separator, separatorIndex1 + 1);
-  int separatorIndex3 = input.indexOf(separator, separatorIndex2 + 1);
-  int separatorIndex4 = input.indexOf(separator, separatorIndex3 + 1);
+  input.remove(0, 2);  // Menghilangkan karakter 'P'
 
-  // Memisahkan nilai menggunakan substring
-  String kpString = input.substring(1, separatorIndex1);
-  String kiString = input.substring(separatorIndex1 + 1, separatorIndex2);
-  String kdString = input.substring(separatorIndex2 + 1, separatorIndex3);
-  String setPointString = input.substring(separatorIndex3 + 1, separatorIndex4);
-  String valveString = input.substring(separatorIndex4 + 1);
+  int comma1 = input.indexOf(',');
+  int comma2 = input.indexOf(',', comma1 + 1);
+  int comma3 = input.indexOf(',', comma2 + 1);
+  int comma4 = input.indexOf(',', comma3 + 1);
 
-  // Mengkonversi nilai ke tipe double dan int
-  Kp = kpString.toDouble();
-  Ki = kiString.toDouble();
-  Kd = kdString.toDouble();
-  setPoint = setPointString.toDouble();
-  step_valve1 = valveString.toInt();
+  // Mengganti koma dengan titik
+  input.replace(",", ".");
+
+  Kp = input.substring(0, comma1).toDouble();
+  Ki = input.substring(comma1 + 1, comma2).toDouble();
+  Kd = input.substring(comma2 + 1, comma3).toDouble();
+  setPoint = input.substring(comma3 + 1, comma4).toDouble();
+  mvalve = input.substring(comma4 + 1).toDouble();
+
 }
 void computePID(double setPoint, double tinggi, double& errorSum, double& lastError, double& outputPID) {
   // Compute time difference
