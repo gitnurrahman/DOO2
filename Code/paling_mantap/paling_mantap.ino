@@ -53,7 +53,7 @@ void cacahPulsa()
 {
   pulsa_sensor++;
 }
-
+char command = 0;
 
 void setup()
 {
@@ -85,7 +85,6 @@ void setup()
 
   stepper.setMaxSpeed(1000);
   stepper.setAcceleration(500);
-  step_valve = 0;
 }
 
 void loop()
@@ -107,7 +106,7 @@ void loop()
   }
   average = total / 5;
   tinggi1 = 48 - average;
-  constrain(tinggi1, 0, 48);
+  tinggi1 = constrain(tinggi1,0,48);
 
   digitalWrite(triggerPin2, LOW);
   delayMicroseconds(2);
@@ -115,7 +114,7 @@ void loop()
   delayMicroseconds(10);
   digitalWrite(triggerPin2, LOW);
   duration2 = pulseIn(echoPin2, HIGH);
-  distance2 = (duration2 * 0.034 / 2 - 0.4393) / 0.9536;
+  distance2 = (duration2 * 0.034 / 2 );
   total2 = total2 - readings2[index2];
   readings2[index2] = distance2;
   total2 = total2 + readings2[index2];
@@ -125,9 +124,9 @@ void loop()
     index2 = 0; // kembali ke indeks pertama
   }
   average2 = total2 / 5;
-  tinggi2 = 33 - average2;
-  constrain(tinggi2, 0, 33);
-
+  tinggi2 = 31  - average2;
+  tinggi2 = constrain(tinggi2,0,31);
+  
   waktuAktual = millis();
   if (waktuAktual >= (waktuLoop + 1000))
   {
@@ -136,7 +135,7 @@ void loop()
     literPermenit = literPerjam / 60;
     pulsa_sensor = 0;
   }
-
+  literPermenit = constrain(literPermenit,0,17);
   //  SEND SENSOR DATA
   String Data = String(tinggi1) + "," + String (tinggi2) + "," + String(literPermenit) + ","  + String(mvalve);
   Serial2.println(Data);
@@ -144,11 +143,10 @@ void loop()
   // ON OFF Pump
   if (Serial3.available() > 0)
   {
-    char command = Serial3.read();
+    command = Serial3.read();
     if (command == '1')
     { //ON
       digitalWrite(relayPin, LOW);
-      Serial.print("on");
     }
     else if (command == '0')
     { //OFF
@@ -215,7 +213,7 @@ void loop()
     stepper.runToPosition();
   }
   else if (tangki == 0) {
-    stepper.moveTo(100);          //Menutup vlave
+    stepper.moveTo(50);          //Menutup vlave
     stepper.runToPosition();
   }
 }
